@@ -1,0 +1,6 @@
+{
+  "name": "biblidle",
+  "private": true,
+  "scripts": { "start": "node serve.js" },
+  "engines": { "node": ">=18" }
+}
