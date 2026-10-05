@@ -52,19 +52,12 @@
 
   function scoreGuess(g) {
     const book = scoreBook(g.book);
-    const ch = scoreDigits(g.ch, String(answer.ch));
-    const v = scoreDigits(g.v, String(answer.v));
+    // Chapter and verse digits share one pool, so a digit can be yellow even if it
+    // belongs in the other number.
+    const digits = scoreDigits(g.ch + g.v, String(answer.ch) + String(answer.v));
+    const ch = digits.slice(0, g.ch.length);
+    const v = digits.slice(g.ch.length);
     return { book, ch, v, win: book === "g" && ch.every((c) => c === "g") && v.every((c) => c === "g") };
-  }
-
-  // Earlier in the Bible = up, later = down.
-  function arrow(g) {
-    const gi = [bookOf(g.book).idx, Number(g.ch), Number(g.v)];
-    const ai = [bookOf(answer.book).idx, answer.ch, answer.v];
-    for (let i = 0; i < 3; i++) {
-      if (gi[i] !== ai[i]) return gi[i] < ai[i] ? "\u2193" : "\u2191";
-    }
-    return "";
   }
 
   // ---------- storage (localStorage, i.e. on the player's device) ----------
@@ -137,10 +130,6 @@
       for (let i = 0; i < V_LEN; i++) vGroup.appendChild(tile(g ? sc.v[i] : "", g ? g.v[i] : ""));
       row.appendChild(vGroup);
 
-      const ar = document.createElement("span");
-      ar.className = "arrow";
-      ar.textContent = g ? arrow(g) : "";
-      row.appendChild(ar);
 
       board.appendChild(row);
     }
