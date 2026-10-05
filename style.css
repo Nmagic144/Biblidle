@@ -5,6 +5,7 @@
   --ink-soft: #7a6240;
   --green: #5d8a4a;
   --yellow: #d7a93a;
+  --orange: #d9772b;
   --gray: #a99c82;
   --line: #c9b283;
 }
@@ -52,20 +53,21 @@ h1 {
 .chip { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 2px 0 8px; vertical-align: baseline; }
 .chip.g, .tile.g { background: var(--green); }
 .chip.y, .tile.y { background: var(--yellow); }
+.chip.o, .tile.o { background: var(--orange); }
 .chip.x, .tile.x { background: var(--gray); }
 
 /* board */
 .board { display: grid; gap: 6px; margin-bottom: 14px; }
-.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto 16px; align-items: center; gap: 6px; }
 .group { display: flex; gap: 4px; align-items: center; }
 .tile {
-  min-width: 38px; height: 44px; border-radius: 8px; border: 2px solid var(--line);
+  width: 36px; height: 44px; border-radius: 8px; border: 2px solid var(--line);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.25rem; font-weight: bold; color: #fff;
 }
 .tile.book { width: 100%; font-size: 0.95rem; padding: 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.tile.g, .tile.y, .tile.x { border-color: transparent; }
-.arrow { width: 14px; font-size: 0.9rem; color: var(--ink-soft); }
+.tile.g, .tile.y, .tile.o, .tile.x { border-color: transparent; }
+.arrow { font-size: 1.1rem; font-weight: bold; color: var(--ink-soft); }
 .sep { color: var(--ink-soft); font-weight: bold; }
 
 /* input */
@@ -86,6 +88,8 @@ h1 {
 }
 .booklist li { padding: 9px 14px; cursor: pointer; }
 .booklist li.active, .booklist li:hover { background: var(--paper-dark); }
+.booklist li.group-head { cursor: default; background: var(--paper-dark); color: var(--ink-soft); font-size: 0.7rem; text-transform: uppercase; letter-spacing: .08em; padding: 6px 14px; position: sticky; top: 0; }
+.booklist li.group-head:hover { background: var(--paper-dark); }
 .booklist li small { color: var(--ink-soft); margin-left: 6px; }
 
 .numbers { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 14px 0 10px; }
@@ -94,7 +98,7 @@ h1 {
   border: 2px solid var(--line); border-radius: 10px; cursor: pointer; position: relative;
 }
 .numbox small { position: absolute; top: 4px; left: 0; right: 0; font-size: 0.65rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; }
-.numbox span { font-size: 1.7rem; font-weight: bold; display: block; margin-top: 14px; min-height: 1.2em; }
+.numbox span { font-size: 1.7rem; white-space: pre; font-weight: bold; display: block; margin-top: 14px; min-height: 1.2em; }
 .numbox.active { border-color: var(--ink); box-shadow: 0 0 0 2px var(--yellow); }
 .colon { font-size: 1.8rem; font-weight: bold; }
 

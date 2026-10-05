@@ -37,7 +37,9 @@
   // ---------- scoring ----------
 
   const pad2 = (n) => String(n).padStart(2, "0");
-  const testamentOf = (name) => BOOKS.find((b) => b.name === name).testament;
+  const bookOf = (name) => BOOKS.find((b) => b.name === name);
+  const CH_LEN = String(answer.ch).length;
+  const V_LEN = String(answer.v).length;
 
   // Wordle-style: greens first, then yellows limited by remaining digit counts.
   function scoreDigits(guess, target) {
@@ -57,14 +59,30 @@
     return res;
   }
 
+  // Book: green = exact, yellow = same section, orange = same testament, gray = no.
+  function scoreBook(name) {
+    const g = bookOf(name), a = bookOf(answer.book);
+    if (g === a) return "g";
+    if (g.chunk === a.chunk) return "y";
+    return g.testament === a.testament ? "o" : "x";
+  }
+
   function scoreGuess(g) {
-    const book = g.book === answer.book ? "g" : testamentOf(g.book) === testamentOf(answer.book) ? "y" : "x";
-    const ch = scoreDigits(pad2(g.ch), pad2(answer.ch));
-    const v = scoreDigits(pad2(g.v), pad2(answer.v));
+    const book = scoreBook(g.book);
+    const ch = scoreDigits(g.ch, String(answer.ch));
+    const v = scoreDigits(g.v, String(answer.v));
     return { book, ch, v, win: book === "g" && ch.every((c) => c === "g") && v.every((c) => c === "g") };
   }
 
-  const arrow = (guess, target) => (guess < target ? "↑" : guess > target ? "↓" : "");
+  // Earlier in the Bible = up, later = down.
+  function arrow(g) {
+    const gi = [bookOf(g.book).idx, Number(g.ch), Number(g.v)];
+    const ai = [bookOf(answer.book).idx, answer.ch, answer.v];
+    for (let i = 0; i < 3; i++) {
+      if (gi[i] !== ai[i]) return gi[i] < ai[i] ? "\u2193" : "\u2191";
+    }
+    return "";
+  }
 
   // ---------- storage (localStorage, i.e. on the player's device) ----------
 
@@ -84,6 +102,10 @@
 
   const state = load();
   if (!state.game || state.game.day !== today) {
+    state.game = { day: today, guesses: [], done: false, won: false };
+  }
+  // Guesses saved by an older version stored numbers; start today fresh.
+  if (state.game.guesses.some((g) => typeof g.ch !== "string")) {
     state.game = { day: today, guesses: [], done: false, won: false };
   }
 
@@ -114,18 +136,12 @@
       row.className = "row";
       const g = state.game.guesses[r];
       const sc = g && scoreGuess(g);
-      const chDigits = g ? pad2(g.ch) : "  ";
-      const vDigits = g ? pad2(g.v) : "  ";
 
       row.appendChild(tile(g ? sc.book : "", g ? g.book : "", "book"));
 
       const chGroup = document.createElement("div");
       chGroup.className = "group";
-      for (let i = 0; i < 2; i++) chGroup.appendChild(tile(g ? sc.ch[i] : "", g ? chDigits[i] : ""));
-      const chArrow = document.createElement("span");
-      chArrow.className = "arrow";
-      chArrow.textContent = g && !sc.win ? arrow(g.ch, answer.ch) : "";
-      chGroup.appendChild(chArrow);
+      for (let i = 0; i < CH_LEN; i++) chGroup.appendChild(tile(g ? sc.ch[i] : "", g ? g.ch[i] : ""));
       row.appendChild(chGroup);
 
       const sep = document.createElement("span");
@@ -135,12 +151,13 @@
 
       const vGroup = document.createElement("div");
       vGroup.className = "group";
-      for (let i = 0; i < 2; i++) vGroup.appendChild(tile(g ? sc.v[i] : "", g ? vDigits[i] : ""));
-      const vArrow = document.createElement("span");
-      vArrow.className = "arrow";
-      vArrow.textContent = g && !sc.win ? arrow(g.v, answer.v) : "";
-      vGroup.appendChild(vArrow);
+      for (let i = 0; i < V_LEN; i++) vGroup.appendChild(tile(g ? sc.v[i] : "", g ? g.v[i] : ""));
       row.appendChild(vGroup);
+
+      const ar = document.createElement("span");
+      ar.className = "arrow";
+      ar.textContent = g ? arrow(g) : "";
+      row.appendChild(ar);
 
       board.appendChild(row);
     }
@@ -186,17 +203,27 @@
     const n = norm(q);
     if (!n) return BOOKS;
     const starts = BOOKS.filter((b) => norm(b.name).startsWith(n));
-    const rest = BOOKS.filter((b) => !starts.includes(b) && norm(b.name).includes(n));
-    return starts.concat(rest);
+    return starts.length ? starts : BOOKS.filter((b) => norm(b.name).includes(n));
   }
 
+  // Books are listed under a heading for each section of the Bible.
   function showList(list) {
     shown = list;
     activeIdx = -1;
     bookList.innerHTML = "";
+    let lastChunk = null;
     list.forEach((b, i) => {
+      if (b.chunk !== lastChunk) {
+        lastChunk = b.chunk;
+        const h = document.createElement("li");
+        h.className = "group-head";
+        h.setAttribute("role", "presentation");
+        h.textContent = CHUNKS.find((c) => c.id === b.chunk).label;
+        bookList.appendChild(h);
+      }
       const li = document.createElement("li");
       li.setAttribute("role", "option");
+      li.className = "opt";
       li.textContent = b.name;
       li.dataset.i = i;
       bookList.appendChild(li);
@@ -211,7 +238,7 @@
   }
 
   function setActive(i) {
-    const items = bookList.children;
+    const items = bookList.querySelectorAll("li.opt");
     if (!items.length) return;
     activeIdx = (i + items.length) % items.length;
     for (let k = 0; k < items.length; k++) items[k].classList.toggle("active", k === activeIdx);
@@ -243,7 +270,7 @@
     } else if (e.key === "Escape") hideList();
   });
   bookList.addEventListener("pointerdown", (e) => {
-    const li = e.target.closest("li");
+    const li = e.target.closest("li.opt");
     if (!li) return;
     e.preventDefault();
     chooseBook(shown[Number(li.dataset.i)]);
@@ -269,9 +296,11 @@
     $("vBox").classList.toggle("active", f === "v");
   }
 
+  const blanks = (val, len) => val.padEnd(len, "_").split("").join(" ");
+
   function renderFields() {
-    $("chBox").querySelector("span").textContent = fields.ch;
-    $("vBox").querySelector("span").textContent = fields.v;
+    $("chBox").querySelector("span").textContent = blanks(fields.ch, CH_LEN);
+    $("vBox").querySelector("span").textContent = blanks(fields.v, V_LEN);
   }
 
   function typeKey(k) {
@@ -279,11 +308,11 @@
       if (fields[activeField]) fields[activeField] = fields[activeField].slice(0, -1);
       else if (activeField === "v") setField("ch");
     } else if (k === "enter") {
-      if (activeField === "ch" && fields.ch) setField("v");
+      if (activeField === "ch" && fields.ch.length === CH_LEN) setField("v");
       else submit();
-    } else if (fields[activeField].length < 2) {
+    } else if (fields[activeField].length < (activeField === "ch" ? CH_LEN : V_LEN)) {
       fields[activeField] += k;
-      if (activeField === "ch" && fields.ch.length === 2) setField("v");
+      if (activeField === "ch" && fields.ch.length === CH_LEN) setField("v");
     }
     renderFields();
   }
@@ -317,13 +346,12 @@
 
   function submit() {
     if (state.game.done) return;
-    const ch = parseInt(fields.ch, 10), v = parseInt(fields.v, 10);
     if (!selectedBook) return message("Pick a book from the list.");
-    if (!(ch >= 1)) return message("Enter a chapter.");
-    if (!(v >= 1)) return message("Enter a verse.");
+    if (fields.ch.length < CH_LEN || !(parseInt(fields.ch, 10) >= 1)) return message("Fill in all " + CH_LEN + " chapter digit" + (CH_LEN > 1 ? "s" : "") + ".");
+    if (fields.v.length < V_LEN || !(parseInt(fields.v, 10) >= 1)) return message("Fill in all " + V_LEN + " verse digit" + (V_LEN > 1 ? "s" : "") + ".");
     message("");
 
-    const guess = { book: selectedBook, ch, v };
+    const guess = { book: selectedBook, ch: fields.ch, v: fields.v };
     state.game.guesses.push(guess);
     const won = scoreGuess(guess).win;
     if (won || state.game.guesses.length >= MAX_GUESSES) finish(won);
@@ -355,7 +383,7 @@
 
   // ---------- sharing ----------
 
-  const EMOJI = { g: "🟩", y: "🟨", x: "⬛" };
+  const EMOJI = { g: "🟩", y: "🟨", o: "\uD83D\uDFE7", x: "⬛" };
 
   function shareText() {
     const rows = state.game.guesses.map((g) => {

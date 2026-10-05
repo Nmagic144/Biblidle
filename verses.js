@@ -1,5 +1,17 @@
 // Daily verse pool (King James Version, public domain).
-// Chapters and verses are kept under 100 so every answer fits in two digits.
+// Sections ("chunks") of the Bible, in canonical order.
+const CHUNKS = [
+  { id: "law", label: "Old Testament: Law", end: 5 },
+  { id: "history", label: "Old Testament: History", end: 17 },
+  { id: "wisdom", label: "Old Testament: Wisdom & Poetry", end: 22 },
+  { id: "major", label: "Old Testament: Major Prophets", end: 27 },
+  { id: "minor", label: "Old Testament: Minor Prophets", end: 39 },
+  { id: "gospels", label: "New Testament: Gospels & Acts", end: 44 },
+  { id: "paul", label: "New Testament: Paul's Letters", end: 57 },
+  { id: "general", label: "New Testament: General Letters & Revelation", end: 66 },
+];
+function chunkOf(i) { return CHUNKS.find((c) => i < c.end).id; }
+
 const BOOKS = [
   "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
   "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
@@ -11,7 +23,7 @@ const BOOKS = [
   "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians",
   "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James",
   "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation",
-].map((name, i) => ({ name, testament: i < 39 ? "OT" : "NT" }));
+].map((name, i) => ({ name, idx: i, testament: i < 39 ? "OT" : "NT", chunk: chunkOf(i) }));
 
 const VERSES = [
   { book: "Genesis", ch: 1, v: 1, text: "In the beginning God created the heaven and the earth." },
@@ -23,6 +35,8 @@ const VERSES = [
   { book: "Psalms", ch: 27, v: 1, text: "The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?" },
   { book: "Psalms", ch: 34, v: 8, text: "O taste and see that the LORD is good: blessed is the man that trusteth in him." },
   { book: "Psalms", ch: 46, v: 1, text: "God is our refuge and strength, a very present help in trouble." },
+  { book: "Psalms", ch: 119, v: 105, text: "Thy word is a lamp unto my feet, and a light unto my path." },
+  { book: "Psalms", ch: 118, v: 24, text: "This is the day which the LORD hath made; we will rejoice and be glad in it." },
   { book: "Psalms", ch: 91, v: 1, text: "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty." },
   { book: "Psalms", ch: 19, v: 1, text: "The heavens declare the glory of God; and the firmament sheweth his handywork." },
   { book: "Proverbs", ch: 3, v: 5, text: "Trust in the LORD with all thine heart; and lean not unto thine own understanding." },
