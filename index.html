@@ -20,7 +20,7 @@
       <span class="chip y"></span> same section / digit elsewhere
       <span class="chip o"></span> same testament
       <span class="chip x"></span> no
-      <br>answer is &uarr; earlier in the Bible &middot; &darr; lateruarr; earlier in the Bible or &uarr; earlier in the Bible &middot; &darr; laterdarr; later
+      <br>the answer is &uarr; earlier in the Bible or &darr; later
     </p>
 
     <section id="board" class="board" aria-label="Guesses"></section>
@@ -55,6 +55,25 @@
       <p id="resultText" class="text"></p>
       <button type="button" id="share" class="guess">Copy to share</button>
       <p class="next">Next verse in <span id="countdown"></span></p>
+
+      <div id="lb" class="lb" hidden>
+        <h3>Leaderboard</h3>
+        <div id="lbJoin" hidden>
+          <p class="hint">Want on the board? Pick a username. This browser is remembered with a cookie, so there's no account or password.</p>
+          <input id="lbName" type="text" maxlength="20" placeholder="Username" autocomplete="off" spellcheck="false">
+          <button type="button" id="lbJoinBtn" class="guess">Join &amp; post my score</button>
+        </div>
+        <div id="lbPost" hidden>
+          <button type="button" id="lbPostBtn" class="guess">Post my score</button>
+        </div>
+        <p id="lbMsg" class="msg" role="status"></p>
+        <div class="tabs">
+          <button type="button" data-tab="today" class="on">Today</button>
+          <button type="button" data-tab="all">Streaks</button>
+        </div>
+        <table id="lbTable"></table>
+        <p id="lbWho" class="hint" hidden></p>
+      </div>
     </section>
 
     <footer>King James Version &middot; a new verse every day</footer>

@@ -127,3 +127,18 @@ footer { margin-top: 24px; color: var(--ink-soft); font-size: 0.8rem; }
 
 @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .shake { animation: shake .3s; }
+
+/* leaderboard */
+.lb { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.lb h3 { margin: 0 0 8px; }
+.hint { color: var(--ink-soft); font-size: 0.8rem; margin: 6px 0; }
+.lb input { width: 100%; max-width: 300px; font: inherit; padding: 10px; margin-bottom: 8px; border: 2px solid var(--line); border-radius: 10px; background: #fbf3dd; color: var(--ink); }
+.tabs { display: flex; justify-content: center; gap: 6px; margin: 10px 0; }
+.tabs button { font: inherit; padding: 6px 14px; border: 2px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink); cursor: pointer; }
+.tabs button.on { background: var(--ink); color: #fbf3dd; border-color: var(--ink); }
+#lbTable { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+#lbTable th { color: var(--ink-soft); font-size: 0.7rem; text-transform: uppercase; letter-spacing: .06em; }
+#lbTable th, #lbTable td { padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--line); }
+#lbTable th:nth-child(2), #lbTable td:nth-child(2) { text-align: left; width: 100%; word-break: break-word; }
+#lbTable tr.me td { font-weight: bold; background: rgba(215, 169, 58, .25); }
+.lb button.link { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }

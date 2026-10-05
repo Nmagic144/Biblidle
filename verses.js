@@ -83,3 +83,28 @@ const VERSES = [
   { book: "Revelation", ch: 3, v: 20, text: "Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me." },
   { book: "Revelation", ch: 21, v: 4, text: "And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away." },
 ];
+
+// ---- daily verse selection (shared by the browser and the leaderboard server) ----
+const EPOCH_UTC = Date.UTC(2026, 9, 5); // puzzle #1 is 5 Oct 2026
+
+// Fixed-seed shuffle so the order is the same for everyone and never repeats within a cycle.
+function shuffledIndexes(n) {
+  let seed = 912;
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+  const a = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function dailyAnswer(dayNumber) {
+  const order = shuffledIndexes(VERSES.length);
+  return VERSES[order[((dayNumber % order.length) + order.length) % order.length]];
+}
+
+if (typeof module !== "undefined") module.exports = { BOOKS, VERSES, EPOCH_UTC, dailyAnswer };

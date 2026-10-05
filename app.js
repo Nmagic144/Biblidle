@@ -2,7 +2,6 @@
   "use strict";
 
   const MAX_GUESSES = 6;
-  const EPOCH = Date.UTC(2026, 9, 5); // puzzle #1 is 5 Oct 2026
   const STORE_KEY = "biblidle:v1";
   const DAY_MS = 86400000;
 
@@ -11,27 +10,11 @@
   // ---------- daily verse ----------
 
   function localDayNumber(date) {
-    return Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - EPOCH) / DAY_MS);
-  }
-
-  // Fixed-seed shuffle so the order is the same for everyone and never repeats within a cycle.
-  function shuffledIndexes(n) {
-    let seed = 912;
-    const rand = () => {
-      seed = (seed * 1664525 + 1013904223) % 4294967296;
-      return seed / 4294967296;
-    };
-    const a = Array.from({ length: n }, (_, i) => i);
-    for (let i = n - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+    return Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - EPOCH_UTC) / DAY_MS);
   }
 
   const today = localDayNumber(new Date());
-  const order = shuffledIndexes(VERSES.length);
-  const answer = VERSES[order[((today % order.length) + order.length) % order.length]];
+  const answer = dailyAnswer(today);
   const puzzleNumber = today + 1;
 
   // ---------- scoring ----------
@@ -176,6 +159,7 @@
       ? "You got it in " + state.game.guesses.length + "/" + MAX_GUESSES + "!"
       : "Not today.";
     $("resultRef").textContent = refName() + " (KJV)";
+    renderLeaderboard();
     $("resultText").textContent = "“" + answer.text + "”";
     updateCountdown();
   }
@@ -412,6 +396,113 @@
     setTimeout(() => (btn.textContent = "Copy to share"), 1800);
   });
 
+  // ---------- leaderboard (optional; needs the Node server's /api) ----------
+
+  const lb = { available: false, username: null, posted: false, tab: "today" };
+
+  async function api(url, body) {
+    const opts = body === undefined ? {} : {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    };
+    const r = await fetch(url, opts);
+    let data = null;
+    try { data = await r.json(); } catch (e) { /* not JSON */ }
+    return { ok: r.ok, data: data || {} };
+  }
+
+  async function initLeaderboard() {
+    try {
+      const r = await api("/api/me?day=" + today);
+      if (!r.ok || !("username" in r.data)) return; // static hosting: no leaderboard
+      lb.available = true;
+      lb.username = r.data.username;
+      lb.posted = r.data.posted;
+      renderLeaderboard();
+    } catch (e) { /* offline or static host */ }
+  }
+
+  function lbMessage(text) { $("lbMsg").textContent = text || ""; }
+
+  async function renderLeaderboard() {
+    if (!lb.available || !state.game.done) return;
+    $("lb").hidden = false;
+    $("lbJoin").hidden = !!lb.username;
+    $("lbPost").hidden = !(lb.username && !lb.posted);
+    if (lb.username) $("lbPostBtn").textContent = "Post my score as " + lb.username;
+    const who = $("lbWho");
+    who.hidden = !lb.username;
+    who.textContent = "";
+    if (lb.username) {
+      who.append("Playing as " + lb.username + " \u00B7 ");
+      const out = document.createElement("button");
+      out.type = "button";
+      out.className = "link";
+      out.textContent = "forget this device";
+      out.addEventListener("click", async () => {
+        await api("/api/logout", {});
+        lb.username = null;
+        lb.posted = false;
+        renderLeaderboard();
+      });
+      who.appendChild(out);
+    }
+
+    let data;
+    try {
+      const r = await api("/api/leaderboard?day=" + today);
+      if (!r.ok) return;
+      data = r.data;
+    } catch (e) { return; }
+
+    const table = $("lbTable");
+    table.innerHTML = "";
+    const addRow = (cells, tag, mine) => {
+      const tr = document.createElement("tr");
+      if (mine) tr.className = "me";
+      cells.forEach((c) => {
+        const td = document.createElement(tag);
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    };
+    if (lb.tab === "today") {
+      addRow(["#", "Player", "Result"], "th");
+      data.today.forEach((r, i) => addRow([i + 1, r.name, r.won ? r.guesses + "/" + MAX_GUESSES : "X"], "td", r.name === data.me));
+      if (!data.today.length) addRow(["", "No scores yet today", ""], "td");
+    } else {
+      addRow(["#", "Player", "Streak", "Best", "Wins", "Avg"], "th");
+      data.all.forEach((r, i) => addRow([i + 1, r.name, r.streak, r.best, r.wins, r.avg ? r.avg.toFixed(1) : "-"], "td", r.name === data.me));
+      if (!data.all.length) addRow(["", "No players yet", "", "", "", ""], "td");
+    }
+  }
+
+  async function postScore() {
+    const r = await api("/api/score", { day: today, guesses: state.game.guesses, won: state.game.won });
+    if (r.ok || /already posted/i.test(r.data.error || "")) { lb.posted = true; lbMessage(""); }
+    else lbMessage(r.data.error || "Couldn't post your score.");
+    renderLeaderboard();
+  }
+
+  $("lbJoinBtn").addEventListener("click", async () => {
+    lbMessage("");
+    try {
+      const r = await api("/api/register", { username: $("lbName").value });
+      if (!r.ok) return lbMessage(r.data.error || "Couldn't sign up.");
+      lb.username = r.data.username;
+      await postScore();
+    } catch (e) { lbMessage("Couldn't reach the server."); }
+  });
+  $("lbName").addEventListener("keydown", (e) => { if (e.key === "Enter") $("lbJoinBtn").click(); });
+  $("lbPostBtn").addEventListener("click", () => postScore().catch(() => lbMessage("Couldn't reach the server.")));
+  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+    lb.tab = b.dataset.tab;
+    document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+    renderLeaderboard();
+  }));
+
   // ---------- init ----------
 
   $("quote").textContent = answer.text;
@@ -419,6 +510,7 @@
   renderBoard();
   renderFields();
   renderResult();
+  initLeaderboard();
   setInterval(() => { if (!$("result").hidden) updateCountdown(); }, 1000);
 
   // Exposed for tests.
