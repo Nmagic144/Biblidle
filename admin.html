@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Biblidle admin</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    main { max-width: 720px; text-align: left; }
+    h1 { text-align: center; }
+    .card { border: 2px solid var(--line); border-radius: 12px; background: #f7ebcc; padding: 14px; margin-bottom: 16px; }
+    .card h2 { margin: 0 0 10px; font-size: 1.15rem; }
+    label { display: block; font-size: 0.8rem; color: var(--ink-soft); margin: 10px 0 3px; }
+    input, select, textarea { width: 100%; font: inherit; padding: 9px; border: 2px solid var(--line); border-radius: 8px; background: #fbf3dd; color: var(--ink); }
+    textarea { min-height: 90px; resize: vertical; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .three { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .btns .guess { width: auto; max-width: none; padding: 10px 16px; font-size: 1rem; }
+    .btn2 { font: inherit; padding: 10px 16px; border: 2px solid var(--ink); border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer; }
+    .small { font: inherit; font-size: 0.8rem; padding: 4px 10px; border: 2px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    td { padding: 8px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td.date { white-space: nowrap; width: 1%; padding-right: 10px; }
+    td.act { white-space: nowrap; text-align: right; width: 1%; }
+    .tag { font-size: 0.65rem; text-transform: uppercase; letter-spacing: .06em; padding: 1px 6px; border-radius: 999px; background: var(--paper-dark); color: var(--ink-soft); margin-left: 6px; }
+    .tag.q { background: var(--green); color: #fff; }
+    .tag.t { background: var(--orange); color: #fff; }
+    .snip { color: var(--ink-soft); font-style: italic; }
+    .ok { color: var(--green); }
+    .err { color: #8a2d1c; }
+    .warn { color: #8a5a00; font-size: 0.85rem; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Biblidle admin</h1>
+
+    <section id="login" class="card" hidden>
+      <h2>Log in</h2>
+      <form id="loginForm">
+        <label for="u">Username</label>
+        <input id="u" autocomplete="username" required>
+        <label for="p">Password</label>
+        <input id="p" type="password" autocomplete="current-password" required>
+        <div class="btns"><button class="guess" type="submit">Log in</button></div>
+        <p id="loginMsg" class="err"></p>
+      </form>
+    </section>
+
+    <div id="panel" hidden>
+      <div class="top">
+        <span id="todayLine" class="hint"></span>
+        <button type="button" id="logout" class="small">Log out</button>
+      </div>
+
+      <section class="card">
+        <h2 id="formTitle">Set a verse</h2>
+        <div class="two">
+          <div>
+            <label for="date">Date</label>
+            <input id="date" type="date">
+          </div>
+          <div>
+            <label for="preset">Start from a built-in verse</label>
+            <select id="preset"><option value="">Choose&hellip;</option></select>
+          </div>
+        </div>
+        <div class="three">
+          <div><label for="book">Book</label><select id="book"></select></div>
+          <div><label for="ch">Chapter</label><input id="ch" type="number" min="1" max="150" inputmode="numeric"></div>
+          <div><label for="v">Verse</label><input id="v" type="number" min="1" max="176" inputmode="numeric"></div>
+        </div>
+        <label for="text">Verse text (KJV)</label>
+        <textarea id="text"></textarea>
+        <p id="warn" class="warn" hidden>That's today's verse. Anyone who already started playing will have their game reset.</p>
+        <div class="btns">
+          <button type="button" id="save" class="guess">Save for this date</button>
+          <button type="button" id="queue" class="btn2">Queue on next open day</button>
+          <button type="button" id="reset" class="btn2">Clear form</button>
+        </div>
+        <p id="msg" role="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>Upcoming days</h2>
+        <p class="hint">Days without a queued verse use the built-in rotation. Dates are the players' local calendar dates.</p>
+        <table id="sched"></table>
+        <div class="btns"><button type="button" id="more" class="btn2">Show 30 more days</button></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="verses.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

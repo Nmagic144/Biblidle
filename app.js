@@ -1,4 +1,4 @@
-(function () {
+function startBiblidle(override) {
   "use strict";
 
   const MAX_GUESSES = 6;
@@ -14,7 +14,8 @@
   }
 
   const today = localDayNumber(new Date());
-  const answer = dailyAnswer(today);
+  // The server may override the default rotation with the verse an admin queued.
+  const answer = override || dailyAnswer(today);
   const puzzleNumber = today + 1;
 
   // ---------- scoring ----------
@@ -80,10 +81,12 @@
   if (!state.game || state.game.day !== today) {
     state.game = { day: today, guesses: [], done: false, won: false };
   }
-  // Guesses saved by an older version stored numbers; start today fresh.
-  if (state.game.guesses.some((g) => typeof g.ch !== "string")) {
+  // Start fresh if saved guesses don't fit today's verse (older version, or the verse was changed).
+  const ref = answer.book + " " + answer.ch + ":" + answer.v;
+  if (state.game.guesses.some((g) => typeof g.ch !== "string") || (state.game.ref && state.game.ref !== ref)) {
     state.game = { day: today, guesses: [], done: false, won: false };
   }
+  state.game.ref = ref;
 
   // A streak only survives if the last win was today or yesterday.
   const liveStreak = () => (state.lastWin >= today - 1 ? state.streak : 0);
@@ -504,4 +507,20 @@
 
   // Exposed for tests.
   window.__biblidle = { scoreDigits, scoreGuess, answer };
+}
+
+// Ask the server for today's verse (it may have been set by the admin page); if there is no
+// server (static hosting) or it can't be reached, fall back to the built-in daily rotation.
+(async function () {
+  let override = null;
+  try {
+    const now = new Date();
+    const day = Math.floor((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - EPOCH_UTC) / 86400000);
+    const r = await fetch("/api/today?day=" + day, { cache: "no-store" });
+    if (r.ok) {
+      const a = await r.json();
+      if (a && BOOKS.some((b) => b.name === a.book) && a.text) override = a;
+    }
+  } catch (e) { /* use the built-in rotation */ }
+  startBiblidle(override);
 })();
